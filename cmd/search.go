@@ -1,3 +1,19 @@
+/*
+Copyright 2022 Damoun Ashournia.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package cmd
 
 import (
@@ -11,6 +27,9 @@ import (
 	"strings"
 )
 
+// SearchCommand encapsulates a *flag.FlagSet type. Flag names must be unique
+// within a FlagSet. The FlagSet holds both subcommands and flags. The struct
+// is also used to hold configuration related fields and search results.
 type searchCommand struct {
 	fs *flag.FlagSet
 
@@ -20,6 +39,9 @@ type searchCommand struct {
 	paths  []string // search results: absolute path to files
 }
 
+// SearchCmd returns a new searchCommand and implements the `search` subcommand
+// and the `-in` flag. This is called by the Runner interface in root.go, which
+// in turn calls the Name(), Init(), and Run() methods when called.
 func searchCmd() *searchCommand {
 	sc := &searchCommand{
 		fs: flag.NewFlagSet("search", flag.ExitOnError),
@@ -30,10 +52,14 @@ func searchCmd() *searchCommand {
 	return sc
 }
 
+// Name returns the FlagSet method Name(). This is required by the Runner
+// interface.
 func (s *searchCommand) Name() string {
 	return s.fs.Name()
 }
 
+// Init takes as input the arguments given by the user and parses these. It also
+// initializes configuration fields.
 func (s *searchCommand) Init(args []string) error {
 	s.zetdir = os.Getenv("ZETDIR")
 	if s.zetdir == "" {
@@ -44,12 +70,18 @@ func (s *searchCommand) Init(args []string) error {
 	return s.fs.Parse(args)
 }
 
+// Run is called when the user calls the `search` subcommand. It calls the
+// methods to perform the search and print the results.
 func (s *searchCommand) Run() error {
 	s.walkDirectory()
 	s.printResults()
 	return nil
 }
 
+// WalkDirectory recursively walks through the filesystem from the root of
+// ZETDIR, calling searchFile on every README.md file. The headers and absolute
+// paths of all files that match the search string at least once is recorded in
+// the corresponding searchCommand field.
 func (s *searchCommand) walkDirectory() error {
 	// Walking the filesystem of ZETDIR from its root ("."), applying anonymous func to each file
 	fs.WalkDir(os.DirFS(s.zetdir), ".", func(p string, d fs.DirEntry, err error) error {
@@ -77,8 +109,9 @@ func (s *searchCommand) walkDirectory() error {
 	return nil
 }
 
-// SearchFile searching titles, tags or entire files according to the s.in flag.
-// It returns the absolute filepath to a file that contains at least one search string.
+// SearchFile searching titles, tags or entire files according to the in flag.
+// It returns the absolute filepath to a file that contains at least one search
+// string.
 func (s *searchCommand) searchFile(p string) (string, string) {
 	fp := s.zetdir + string(filepath.Separator) + p
 
