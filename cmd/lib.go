@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"time"
 )
@@ -32,6 +33,9 @@ func isosec() string {
 // EditFile opens file specified by filePath in editor.
 func editFile(filePath string, editor string) error {
 	cmd := exec.Command(editor, filePath)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+
 	err := cmd.Start()
 	if err != nil {
 		fmt.Println("failed to launch editor")
