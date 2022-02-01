@@ -122,7 +122,11 @@ func (s *searchCommand) searchFile(p string) (string, string) {
 
 	switch s.in {
 	case "title":
-		title, absPath = s.searchTitle(fp, s.fs.Args())
+		if s.fs.Args()[0] == "-in" || s.fs.Args()[0] == "--in" {
+			title, absPath = s.searchTitle(fp, s.fs.Args()[2:])
+		} else {
+			title, absPath = s.searchTitle(fp, s.fs.Args())
+		}
 	case "tags":
 		fmt.Println("Searching in:", s.in)
 		fmt.Println("To be implemented")
