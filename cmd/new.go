@@ -19,12 +19,27 @@ package cmd
 import (
 	"flag"
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+	"text/template"
 )
 
+// NewCommand encapsulates a *flag.FlagSet type. Flag names must be unique
+// within a FlagSet. The FlagSet may hold both subcommands and flags. The
+// struct is also used to hold configuration related fields.
 type newCommand struct {
 	fs *flag.FlagSet
+
+	zetdir string // to store root directory
+	editor string // to store editor
 }
 
+// NewCmd creates a new zettelkasten file with the header given by the user
+// passed arguments. The zettelkasten is placed in a new directory with isosec
+// name. This is called by the Runner interface in root.go, which in turn calls
+// the Name(), Init(), and Run() methods when called.
 func newCmd() *newCommand {
 	nc := &newCommand{
 		fs: flag.NewFlagSet("new", flag.ExitOnError),
@@ -32,15 +47,81 @@ func newCmd() *newCommand {
 	return nc
 }
 
+// Name returns the FlagSet method Name(). This is required by the Runner
+// interface.
 func (n *newCommand) Name() string {
 	return n.fs.Name()
 }
 
+// Init takes as input the arguments given by the user and parses these. It also
+// initializes configuration fields.
 func (n *newCommand) Init(args []string) error {
+	n.zetdir = os.Getenv("ZETDIR")
+	if n.zetdir == "" {
+		fmt.Println("configure ZETDIR environment variable and try again")
+		os.Exit(1)
+	}
+
+	n.editor = os.Getenv("EDITOR")
+	if n.editor == "" {
+		fmt.Println("configure EDITOR environment variable and try again")
+		os.Exit(1)
+	}
+
 	return n.fs.Parse(args)
 }
 
+// Run is called when the user calls the `new` subcommand. It calls the
+// methods to perform the folder and file creation, and opens the editor.
 func (n *newCommand) Run() error {
-	fmt.Println("Ny kommando!")
+	filePath := n.newFile()
+
+	err := editFile(filePath, n.editor)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return nil
+}
+
+// NewFile creates a file named README.md in the appropriate directory. The
+// file is created from a template that uses optional arguments passed by the
+// user to create a header.
+func (n *newCommand) newFile() string {
+	// Create directory
+	dirPath := n.createDirectory()
+
+	// Create file
+	filePath := dirPath + string(filepath.Separator) + "README.md"
+	file, err := os.Create(filePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	// Get header from arguments passed by user
+	type header struct {
+		Title string
+	}
+	h := header{strings.Join(n.fs.Args(), " ")}
+
+	// Create template
+	f := template.Must(template.New("temp").Parse("# {{.Title}}"))
+
+	// Write template to file
+	err = f.Execute(file, h)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return filePath
+}
+
+// CreateDirectory creates a directory for new file named by the current UTC
+// time. It returns the path to that directory.
+func (n *newCommand) createDirectory() string {
+	timeString := isosec()
+	path := n.zetdir + string(filepath.Separator) + timeString
+	os.Mkdir(path, 0755)
+	return path
 }
