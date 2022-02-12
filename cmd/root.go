@@ -39,6 +39,7 @@ func Root(args []string) error {
 		newCmd(),
 		helpCmd(),
 		searchCmd(),
+		editCmd(),
 	}
 
 	subcommand := os.Args[1]
