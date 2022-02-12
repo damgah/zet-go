@@ -19,12 +19,17 @@ package cmd
 import (
 	"flag"
 	"fmt"
+	"log"
+	"os"
+	"strconv"
 )
 
 // EditCommand encapsulates a *flag.FlagSet type. Flag names must be unique
 // within a FlagSet. The FlagSet holds both subcommands and flags.
 type editCommand struct {
 	fs *flag.FlagSet
+
+	editor string // to store editor
 }
 
 // EditCmd returns a new editCommand and implements the `edit` subcommand.
@@ -45,21 +50,44 @@ func (e *editCommand) Name() string {
 
 // Init takes as input the arguments given by the user and parses these.
 func (e *editCommand) Init(args []string) error {
+	e.editor = os.Getenv("EDITOR")
+	if e.editor == "" {
+		fmt.Println("configure EDITOR environment variable and try again")
+		os.Exit(1)
+	}
+
 	return e.fs.Parse(args)
 }
 
 // Run is called when the user calls the `edit` subcommand.
 func (e *editCommand) Run() error {
-	// perform search and store results
 	switch len(e.fs.Args()) {
 	case 0:
 		fmt.Println("Enter search string to search titles")
 	default:
+		// perform search and store results
 		s := searchCmd()
 		s.Init(e.fs.Args())
 		s.Run()
-		// TODO: Scan user input as int, check if valid comparing to number of
-		// search results, if valid open in editor
+
+		// scan user input as string
+		fmt.Println("Edit?")
+		var v string
+		fmt.Scan(&v)
+
+		// exit program if `v` is not convertible to int
+		i, err := strconv.Atoi(v)
+		if err != nil {
+			return nil
+		}
+
+		// edit file
+		if i >= 0 && i < len(s.titles) {
+			err = editFile(s.paths[i], e.editor)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
 	}
 
 	return nil
