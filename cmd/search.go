@@ -122,8 +122,16 @@ func (s *searchCommand) searchFile(p string) (string, string) {
 
 	switch s.in {
 	case "title":
-		if s.fs.Args()[0] == "-in" || s.fs.Args()[0] == "--in" {
-			title, absPath = s.searchTitle(fp, s.fs.Args()[2:])
+		if len(s.fs.Args()) == 0 {
+			fmt.Println("Enter search string")
+			os.Exit(1)
+		} else if s.fs.Args()[0] == "-in" || s.fs.Args()[0] == "--in" {
+			if len(s.fs.Args()[2:]) == 0 {
+				fmt.Println("Enter search string")
+				os.Exit(1)
+			} else {
+				title, absPath = s.searchTitle(fp, s.fs.Args()[2:])
+			}
 		} else {
 			title, absPath = s.searchTitle(fp, s.fs.Args())
 		}
