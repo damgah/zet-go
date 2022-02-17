@@ -45,9 +45,8 @@ func (h *helpCommand) Run() error {
 	fmt.Println("zet {cmd} [flags]")
 	fmt.Println("where {cmd} is one of")
 	fmt.Println("\thelp: displays this usage information")
-	fmt.Println("\tnew: create a new zettel direcotory and file, and start editor")
+	fmt.Println("\tnew: create a new zettel directory and file, and start editor")
 	fmt.Println("\tsearch [-in (title, tags, all)] {string}: search zettelkasten repo for {string} in title (default), tags, or entire file")
-	fmt.Println("\tedit {string}: numbered list of zettels containing {string} in title, and opens selected file in editor")
-	fmt.Println("\tcommit: commits changes using header of added file as commit message, pulls, and pushes to github")
+	fmt.Println("\tedit {string}: numbered list of zettels containing {string} in title, and open selected file in editor")
 	return nil
 }
