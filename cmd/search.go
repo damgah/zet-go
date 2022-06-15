@@ -47,7 +47,7 @@ func searchCmd() *searchCommand {
 		fs: flag.NewFlagSet("search", flag.ExitOnError),
 	}
 
-	sc.fs.StringVar(&sc.in, "in", "title", "must be either of {title, tags, all}")
+	sc.fs.StringVar(&sc.in, "in", "all", "must be either of {title, tags, all}")
 
 	return sc
 }
@@ -120,50 +120,50 @@ func (s *searchCommand) searchFile(p string) (string, string) {
 		absPath string
 	)
 
-	switch s.in {
-	case "title":
-		if len(s.fs.Args()) == 0 {
+	if len(s.fs.Args()) == 0 {
+		fmt.Println("Enter search string")
+		os.Exit(1)
+	} else if s.fs.Args()[0] == "-in" || s.fs.Args()[0] == "--in" {
+		if len(s.fs.Args()[2:]) == 0 {
 			fmt.Println("Enter search string")
 			os.Exit(1)
-		} else if s.fs.Args()[0] == "-in" || s.fs.Args()[0] == "--in" {
-			if len(s.fs.Args()[2:]) == 0 {
-				fmt.Println("Enter search string")
-				os.Exit(1)
-			} else {
-				title, absPath = s.searchTitle(fp, s.fs.Args()[2:])
-			}
 		} else {
-			title, absPath = s.searchTitle(fp, s.fs.Args())
+			title, absPath = s.search(fp, s.fs.Args()[2:])
 		}
-	case "tags":
-		fmt.Println("Searching in:", s.in)
-		fmt.Println("To be implemented")
-	case "all":
-		fmt.Println("Searching in:", s.in)
-		fmt.Println("To be implemented")
-	default:
-		fmt.Println("search flag -in must be either of {title, tags, all}")
+	} else {
+		title, absPath = s.search(fp, s.fs.Args())
 	}
 
 	return title, absPath
 }
 
-// SearchTitle searches the first line of each file for strings that match args
-func (s *searchCommand) searchTitle(fp string, args []string) (string, string) {
-	// text := s.readFile(fp)
-	// textLower := strings.ToLower(text[0]) // Title/search uses only first line of text
-	text := s.readTitle(fp)
-	textLower := strings.ToLower(text)
+// Search searches the file for strings that match args
+func (s *searchCommand) search(fp string, args []string) (string, string) {
 
 	var (
+		text    string
+		title   string
 		match   string
 		absPath string
 	)
 
+	switch s.in {
+	case "title":
+		text = s.readTitle(fp)
+		title = s.readTitle(fp)
+	case "tags":
+		fmt.Println("Searching in:", s.in)
+		fmt.Println("To be implemented")
+	case "all":
+		text = s.readFile(fp)
+		title = s.readTitle(fp)
+	default:
+		fmt.Println("search flag -in must be either of {title, tags, all}")
+	}
+
 	for _, arg := range args {
-		if strings.Contains(textLower, arg) {
-			// match = text[0]
-			match = text
+		if strings.Contains(strings.ToLower(text), strings.ToLower(arg)) {
+			match = title
 			absPath = fp
 		}
 	}
@@ -171,23 +171,24 @@ func (s *searchCommand) searchTitle(fp string, args []string) (string, string) {
 	return match, absPath
 }
 
-// // ReadFile returns a slice of strings containing the content of the fp file
-// func (s *searchCommand) readFile(fp string) []string {
-// 	f, err := os.Open(fp)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	defer f.Close()
+// ReadFile returns a slice of strings containing the content of the fp file
+func (s *searchCommand) readFile(fp string) string {
+	f, err := os.Open(fp)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
 
-// 	// Scan file line by line
-// 	scanner := bufio.NewScanner(f)
-// 	var text []string
-// 	for scanner.Scan() {
-// 		text = append(text, scanner.Text())
-// 	}
+	// Scan file line by line
+	scanner := bufio.NewScanner(f)
+	var text []string
+	for scanner.Scan() {
+		text = append(text, scanner.Text())
+	}
+	textString := strings.Join(text, " ")
 
-// 	return text
-// }
+	return textString
+}
 
 // ReadTitle returns a string containing the first line of the fp file
 func (s *searchCommand) readTitle(fp string) string {
