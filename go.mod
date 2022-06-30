@@ -1,5 +1,5 @@
-module github.com/dashournia/zet-go
+module github.com/damgah/zet-go
 
 go 1.18
 
-replace github.com/dashournia/zet-go/cmd => ./cmd
+replace github.com/damgah/zet-go/cmd => ./cmd

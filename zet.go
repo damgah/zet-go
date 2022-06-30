@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dashournia/zet-go/cmd"
+	"github.com/damgah/zet-go/cmd"
 )
 
 func main() {
