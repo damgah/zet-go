@@ -24,10 +24,11 @@ import (
 )
 
 // Isosec returns a UTC timestamp (yyyymmddHHMMSS) as a string.
-func isosec() string {
+func isosec() (string, string) {
 	t := time.Now().UTC()
 	timeString := fmt.Sprintf("%d%02d%02d%02d%02d%02d", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
-	return timeString
+	timeStringIndex := fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
+	return timeString, timeStringIndex
 }
 
 // EditFile opens file specified by filePath in editor.

@@ -84,7 +84,7 @@ func (s *searchCommand) Run() error {
 // the corresponding searchCommand field.
 func (s *searchCommand) walkDirectory() error {
 	// Walking the filesystem of ZETDIR from its root ("."), applying anonymous func to each file
-	fs.WalkDir(os.DirFS(s.zetdir), ".", func(p string, d fs.DirEntry, err error) error {
+	fs.WalkDir(os.DirFS(s.zetdir), "zets", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -99,7 +99,7 @@ func (s *searchCommand) walkDirectory() error {
 			t, absPath := s.searchFile(p)
 
 			if t != "" {
-				d := strings.Split(p, "/")[0]
+				d := strings.Split(p, "/")[1]
 				s.titles = append(s.titles, d+"\t"+strings.Trim(t, "# "))
 				s.paths = append(s.paths, absPath)
 			}
@@ -207,7 +207,7 @@ func (s *searchCommand) readTitle(fp string) string {
 // PrintResults prints the search results
 func (s *searchCommand) printResults() error {
 	for i, value := range s.titles {
-		fmt.Printf("[%d] %s\n", i, value)
+		fmt.Printf("[%d]\t%s\n", i, value)
 	}
 	return nil
 }

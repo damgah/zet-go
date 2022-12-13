@@ -32,8 +32,10 @@ import (
 type newCommand struct {
 	fs *flag.FlagSet
 
-	zetdir string // to store root directory
-	editor string // to store editor
+	zetdir          string // to store root directory
+	editor          string // to store editor
+	timeString      string // to store the timestamp
+	timeStringIndex string // to store the timestamp for generating the index
 }
 
 // NewCmd creates a new zettelkasten file with the header given by the user
@@ -74,6 +76,9 @@ func (n *newCommand) Init(args []string) error {
 // Run is called when the user calls the `new` subcommand. It calls the
 // methods to perform the folder and file creation, and opens the editor.
 func (n *newCommand) Run() error {
+	// Set timestamps
+	n.timeString, n.timeStringIndex = isosec()
+
 	filePath := n.newFile()
 
 	err := editFile(filePath, n.editor)
@@ -114,14 +119,42 @@ func (n *newCommand) newFile() string {
 		log.Fatal(err)
 	}
 
+	// Update index file
+	indexPath := n.zetdir + string(filepath.Separator) + "README.md"
+	line := "* " + n.timeStringIndex + " [" + h.Title + "](" + "https://github.com/damgah/zet/tree/main/zets/" + n.timeString + "/README.md)"
+	UpdateIndexFile(indexPath, line)
+
 	return filePath
 }
 
 // CreateDirectory creates a directory for new file named by the current UTC
 // time. It returns the path to that directory.
 func (n *newCommand) createDirectory() string {
-	timeString := isosec()
-	path := n.zetdir + string(filepath.Separator) + timeString
+	path := n.zetdir + string(filepath.Separator) + "zets" + string(filepath.Separator) + n.timeString
 	os.Mkdir(path, 0755)
 	return path
+}
+
+// UpdateIndexFile appends a line of text to the existing index file.
+// If the file doesn't exist, it creates a new file before appending the line.
+func UpdateIndexFile(filePath string, line string) error {
+	// Open the file in append mode
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		// The file doesn't exist, so we create a new file
+		file, err = os.Create(filePath)
+		if err != nil {
+			return err
+		}
+	}
+	defer file.Close()
+
+	// Append the line of text to the file
+	_, err = file.WriteString(line + "\n")
+	if err != nil {
+		return err
+	}
+
+	// The line has been appended successfully
+	return nil
 }
