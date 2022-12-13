@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -47,4 +48,48 @@ func editFile(filePath string, editor string) error {
 		fmt.Println("finished with error:", err)
 	}
 	return nil
+}
+
+func addAndCommit(localRepoPath string, commitMessage string) {
+	// Use the 'git' command to add and commit the changes in the local repo
+	addCmd := exec.Command("git", "--git-dir", localRepoPath+"/.git", "--work-tree", localRepoPath, "add", ".")
+	addCmd.Run()
+
+	commitCmd := exec.Command("git", "--git-dir", localRepoPath+"/.git", "--work-tree", localRepoPath, "commit", "-m", commitMessage)
+	commitCmd.Run()
+
+	fmt.Println("Changes committed to local repo at", localRepoPath)
+}
+
+func pullFromRepo(localRepoPath string, repoUrl string) {
+	cmd := exec.Command("git", "--git-dir", localRepoPath+"/.git", "--work-tree", localRepoPath, "pull", repoUrl)
+	output, err := cmd.Output()
+
+	if err != nil {
+		fmt.Println("Error pulling from repository: ", err)
+	} else {
+		fmt.Println(string(output))
+	}
+}
+
+func pushToRepo(localRepoPath string, repoUrl string) {
+	cmd := exec.Command("git", "--git-dir", localRepoPath+"/.git", "--work-tree", localRepoPath, "push", repoUrl)
+	output, err := cmd.Output()
+
+	if err != nil {
+		fmt.Println("Error pushing to repository: ", err)
+	} else {
+		fmt.Println(string(output))
+	}
+}
+
+func getRemoteGitUrl(localRepoPath string) (string, error) {
+	cmd := exec.Command("git", "--git-dir", localRepoPath+"/.git", "--work-tree", localRepoPath, "config", "--get", "remote.origin.url")
+	output, err := cmd.Output()
+
+	if err != nil {
+		return "", err
+	} else {
+		return strings.TrimSpace(string(output)), nil
+	}
 }

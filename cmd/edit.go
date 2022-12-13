@@ -29,7 +29,9 @@ import (
 type editCommand struct {
 	fs *flag.FlagSet
 
-	editor string // to store editor
+	editor   string // to store editor
+	repoUrl  string // to store url to repo
+	zetTitle string // to store title
 }
 
 // EditCmd returns a new editCommand and implements the `edit` subcommand.
@@ -83,11 +85,25 @@ func (e *editCommand) Run() error {
 
 		// edit file
 		if i >= 0 && i < len(s.titles) {
+			e.zetTitle = s.titles[i]
 			err = editFile(s.paths[i], e.editor)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
+
+		// Get remote repo url
+		e.repoUrl, err = getRemoteGitUrl(s.zetdir)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Add and commit changes
+		addAndCommit(s.zetdir, e.zetTitle)
+
+		// Pull and push changes
+		pullFromRepo(s.zetdir, e.repoUrl)
+		pushToRepo(s.zetdir, e.repoUrl)
 	}
 
 	return nil

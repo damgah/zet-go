@@ -36,6 +36,8 @@ type newCommand struct {
 	editor          string // to store editor
 	timeString      string // to store the timestamp
 	timeStringIndex string // to store the timestamp for generating the index
+	repoUrl         string // to store the remote repo url
+	zetTitle        string // to store title
 }
 
 // NewCmd creates a new zettelkasten file with the header given by the user
@@ -76,15 +78,32 @@ func (n *newCommand) Init(args []string) error {
 // Run is called when the user calls the `new` subcommand. It calls the
 // methods to perform the folder and file creation, and opens the editor.
 func (n *newCommand) Run() error {
+	// Get title
+	n.zetTitle = strings.Join(n.fs.Args(), " ")
+
+	// Get remote repo url
+	var err error
+	n.repoUrl, err = getRemoteGitUrl(n.zetdir)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Set timestamps
 	n.timeString, n.timeStringIndex = isosec()
 
 	filePath := n.newFile()
 
-	err := editFile(filePath, n.editor)
+	err = editFile(filePath, n.editor)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Add and commit changes
+	addAndCommit(n.zetdir, n.zetTitle)
+
+	// Pull and push changes
+	pullFromRepo(n.zetdir, n.repoUrl)
+	pushToRepo(n.zetdir, n.repoUrl)
 
 	return nil
 }
@@ -108,7 +127,7 @@ func (n *newCommand) newFile() string {
 	type header struct {
 		Title string
 	}
-	h := header{strings.Join(n.fs.Args(), " ")}
+	h := header{n.zetTitle}
 
 	// Create template
 	f := template.Must(template.New("temp").Parse("# {{.Title}}"))
@@ -121,7 +140,8 @@ func (n *newCommand) newFile() string {
 
 	// Update index file
 	indexPath := n.zetdir + string(filepath.Separator) + "README.md"
-	line := "* " + n.timeStringIndex + " [" + h.Title + "](" + "https://github.com/damgah/zet/tree/main/zets/" + n.timeString + "/README.md)"
+	repoPath := strings.TrimSuffix(n.repoUrl, ".git")
+	line := "* " + n.timeStringIndex + " [" + h.Title + "](" + repoPath + "/tree/main/zets/" + n.timeString + "/README.md)"
 	UpdateIndexFile(indexPath, line)
 
 	return filePath
